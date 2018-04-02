@@ -27,9 +27,12 @@ int read_to_buffer(int fd, char* buffer, int* out_len) {
 		return 1;
 	}
 	ssize_t len = read(fd, buffer, BUFFSIZE);
-	if (len < 0) {  //error reading from file
+	if (len < 0) {  //error reading from file, exit
 		printf("Error reading from file: %s\n", strerror(errno));
-		return errno;
+		if (NULL != buffer) {
+			free(buffer);
+		}
+		exit(EXIT_FAILURE);
 	}
 	// check if reached EOF
 	if (len == 0) {
@@ -114,7 +117,7 @@ int main(int argc, char** argv) {
 	// allocated a buffer
 	char* buffer = (char*) calloc((BUFFSIZE + 1), sizeof(char));
 	if (NULL == buffer) {
-		printf("Could not allocated required data");
+		printf("Could not allocated required data\n");
 		close(file_desc);
 		exit(EXIT_FAILURE);
 	}
