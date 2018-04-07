@@ -62,6 +62,14 @@ int remove_process(ChildProc* list_of_processes, int index, int* number_of_proce
 	return rc;
 }
 
+void clean_up_remaining_processes(ChildProc* list_of_processes, int number_of_process) {
+	// kill and free all child processes
+	for (int i = 0; i < number_of_process; i++) {
+		kill(list_of_processes[i].pid_num, SIGKILL);
+	}
+	free_child_proc(list_of_processes);
+}
+
 int main(int argc, char** argv) {
 	// check number of input arguments
 	if (argc < 4) {
@@ -87,14 +95,7 @@ int main(int argc, char** argv) {
 	int current_proc = 0;
 
 	for (int i = 0; i < number_of_processes; i++) {
-		//char* current_symbol = (char*) malloc(NUM_OF_ELEM * sizeof(char)); // safely get char* type of current symbol
 		char current_symbol[] = {pattern[i], '\0'};
-//		if (NULL == current_symbol) {
-//			printf("Failed to allocate memory\n");
-//			exit(EXIT_FAILURE);
-//		}
-//		current_symbol[0] = pattern[i];
-//		current_symbol[1] = '\0';
 		char* exec_args[] = { name_of_process, path_to_file, current_symbol, NULL };
 		if ((current_proc = fork()) == 0) {
 			int rc = execvp(exec_args[0], exec_args);
@@ -121,7 +122,7 @@ int main(int argc, char** argv) {
 			int rc = waitpid(list_of_processes[i].pid_num, &r_status, WCONTINUED | WUNTRACED | WNOHANG);
 			if (rc == -1) { // waitpid failed
 				printf("Failed to waitpid: %s\n", strerror(errno));
-				free_child_proc(list_of_processes);
+				clean_up_remaining_processes(list_of_processes, number_of_processes);
 				return errno;
 			}
 			// rc == pid_num
@@ -131,15 +132,16 @@ int main(int argc, char** argv) {
 					// kill process
 					if (kill(list_of_processes[i].pid_num, SIGTERM) < 0) { // failed to send sigterm
 						printf("Failed to seng SIGTERM: %s\n", strerror(errno));
-						free_child_proc(list_of_processes);
+						clean_up_remaining_processes(list_of_processes, number_of_processes);
 						return errno;
 					}
 					if (kill(list_of_processes[i].pid_num, SIGCONT) < 0) { // failed to send sigcont
 						printf("Failed to seng SIGCONT: %s\n", strerror(errno));
-						free_child_proc(list_of_processes);
+						clean_up_remaining_processes(list_of_processes, number_of_processes);
 						return errno;
 					}
 					if (!remove_process(list_of_processes, i, &number_of_processes)) {
+						clean_up_remaining_processes(list_of_processes, number_of_processes);
 						exit(EXIT_FAILURE);
 					}
 
@@ -147,7 +149,7 @@ int main(int argc, char** argv) {
 					// send SIGCONT
 					if (kill(list_of_processes[i].pid_num, SIGCONT) < 0) { // failed to send sigcont
 						printf("Failed to seng SIGCONT: %s\n", strerror(errno));
-						free_child_proc(list_of_processes);
+						clean_up_remaining_processes(list_of_processes, number_of_processes);
 						return errno;
 					}
 				}
@@ -156,6 +158,7 @@ int main(int argc, char** argv) {
 				// remove process
 				if (!remove_process(list_of_processes, i,
 						&number_of_processes)) {
+					clean_up_remaining_processes(list_of_processes, number_of_processes);
 					exit(EXIT_FAILURE);
 				}
 			}
