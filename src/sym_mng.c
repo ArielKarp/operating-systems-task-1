@@ -26,7 +26,8 @@ typedef struct {
 int check_third_argument(char* termination_bount) {
 	int rc = 1;
 	int len_of_term = strlen(termination_bount);
-	for (int i = 0; i < len_of_term; i++) {
+	int i = 0;
+	for (; i < len_of_term; i++) {
 		if (!isdigit(termination_bount[i])) {
 			printf("Third argument is not a number\n");
 			rc = 0;
@@ -64,7 +65,8 @@ int remove_process(ChildProc* list_of_processes, int index, int* number_of_proce
 
 void clean_up_remaining_processes(ChildProc* list_of_processes, int number_of_process) {
 	// kill and free all child processes
-	for (int i = 0; i < number_of_process; i++) {
+	int i = 0;
+	for (; i < number_of_process; i++) {
 		kill(list_of_processes[i].pid_num, SIGKILL);
 	}
 	free_child_proc(list_of_processes);
@@ -94,14 +96,15 @@ int main(int argc, char** argv) {
 	char* name_of_process = "./sym_count";
 	int current_proc = 0;
 
-	for (int i = 0; i < number_of_processes; i++) {
+	int i = 0;
+	for (; i < number_of_processes; i++) {
 		char current_symbol[] = {pattern[i], '\0'};
 		char* exec_args[] = { name_of_process, path_to_file, current_symbol, NULL };
 		if ((current_proc = fork()) == 0) {
 			int rc = execvp(exec_args[0], exec_args);
 			if (rc == -1) { // failed to execute
 				printf("Failed to start execution: %s\n", strerror(errno));
-				return errno;  // TODO: check this, maybe another return
+				return errno;
 			}
 		} else if (current_proc == -1) { // fork failed
 			free_child_proc(list_of_processes);
@@ -117,7 +120,8 @@ int main(int argc, char** argv) {
 
 	int still_running = 1;
 	while (still_running == 1) {
-		for (int i = 0; i < number_of_processes; i++) {
+		int i = 0;
+		for (; i < number_of_processes; i++) {
 			int r_status = -1;
 			int rc = waitpid(list_of_processes[i].pid_num, &r_status, WCONTINUED | WUNTRACED | WNOHANG);
 			if (rc == -1) { // waitpid failed

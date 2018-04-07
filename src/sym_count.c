@@ -128,7 +128,8 @@ int main(int argc, char** argv) {
 	int status_of_read = read_to_buffer(file_desc, buffer, &curr_len);
 	while (status_of_read == 0) {
 		// iterate over the buffer
-		for (int i = 0; i < curr_len; i++) {
+		int i = 0;
+		for (; i < curr_len; i++) {
 			curr_symbol = buffer[i];
 			if (curr_symbol == in_symbol) {
 				sym_cnt++;
